@@ -17,6 +17,12 @@ body {
     text-align: center;
 }
 
+.form-group {
+    display: flex;
+    align-items: center;
+    margin: 10px 0;
+}
+
 h1 {
     color: #333;
 }
