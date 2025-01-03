@@ -17,6 +17,7 @@ def generate_password(length=12, include_punctuation=False, include_numbers=Fals
 @app.route("/", methods=["GET", "POST"])
 def home():
     password = ""
+    length = 12
     include_punctuation = False
     include_numbers = False
     if request.method == "POST":
