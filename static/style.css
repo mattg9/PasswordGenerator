@@ -59,8 +59,50 @@ button:hover {
     margin-top: 20px;
 }
 
+.password-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .password {
     font-weight: bold;
     color: green;
     word-wrap: break-word;
+}
+
+.copy-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    margin-left: 10px;
+    padding: 0;
+}
+
+.copy-button img {
+    vertical-align: middle;
+}
+
+.toast {
+    visibility: hidden;
+    min-width: 250px;
+    margin-left: -125px;
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    border-radius: 2px;
+    padding: 16px;
+    position: fixed;
+    z-index: 1;
+    left: 50%;
+    bottom: 30px;
+    font-size: 17px;
+    opacity: 0;
+    transition: opacity 0.5s, bottom 0.5s;
+}
+
+.toast.show {
+    visibility: visible;
+    opacity: 1;
+    bottom: 50px;
 }

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Password Generator</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="{{ url_for('static', filename='script.js') }}" defer></script>
 </head>
 <body>
     <div class="container">
@@ -27,7 +28,12 @@
         {% if password %}
         <div class="result">
             <h3>Generated Password:</h3>
-            <p class="password">{{ password }}</p>
+            <div class="password-container">
+                <p class="password" id="generated-password">{{ password }}</p>
+                <button onclick="copyToClipboard()" class="copy-button">
+                    <img src="{{ url_for('static', filename='copy.png') }}" alt="Copy" width="20" height="20">
+                </button>
+            </div>
         </div>
         {% endif %}
     </div>
