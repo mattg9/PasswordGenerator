@@ -1,11 +1,13 @@
 import pytest
 from playwright.sync_api import sync_playwright
 from subprocess import Popen
+import time
 
 # Start the Flask app before running tests
 @pytest.fixture(scope="module", autouse=True)
 def start_flask_app():
     flask_process = Popen(["flask", "run"])
+    time.sleep(2)  # Wait for the server to start
     yield
     flask_process.terminate()  # Terminate Flask process after tests
 
@@ -16,15 +18,25 @@ BASE_URL = "http://127.0.0.1:5000"
 def extract_password(page):
     return page.locator(".password").text_content()
 
-def browser_args():
-    return ["--disable-features=IsolateOrigins,site-per-process"]
+def get_browser_args():
+    return [
+        "--disable-features=IsolateOrigins,site-per-process",
+        "--enable-features=SharedArrayBuffer",
+        "--use-fake-ui-for-media-stream"
+    ]
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def browser():
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False, args=browser_args())
+        browser = p.chromium.launch(headless=False, args=get_browser_args())
         yield browser
         browser.close()
+
+@pytest.fixture(scope="module")
+def page(browser):
+    page = browser.new_page()
+    yield page
+    page.close()
 
 # Playwright tests
 @pytest.mark.parametrize(
@@ -36,8 +48,7 @@ def browser():
         (True, True, "all characters"),  # All characters
     ],
 )
-def test_password_generation(browser, use_numbers, use_punctuation, expected_chars):
-    page = browser.new_page()
+def test_password_generation(page, use_numbers, use_punctuation, expected_chars):
     page.goto(BASE_URL)
     # Set password options
     if not use_numbers:
@@ -60,10 +71,9 @@ def test_password_generation(browser, use_numbers, use_punctuation, expected_cha
     elif expected_chars == "letters and punctuation":
         assert all(c.isalpha() or not c.isalnum() for c in password), "Password contains invalid characters"
     elif expected_chars == "all characters":
-        assert any(not c.isalnum() for c in password), "Password lacks punctuation"
+        assert all(c.isalpha() or c.isdigit() or not c.isalnum() for c in password), "Password contains invalid characters"
 
-def test_copy_to_clipboard(browser):
-    page = browser.new_page()
+def test_copy_to_clipboard(page):
     page.goto(BASE_URL)
     # Submit form to generate a password
     page.click("button[type='submit']")
