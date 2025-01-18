@@ -18,23 +18,19 @@ BASE_URL = "http://127.0.0.1:5000"
 def extract_password(page):
     return page.locator(".password").text_content()
 
-def get_browser_args():
-    return [
-        "--disable-features=IsolateOrigins,site-per-process",
-        "--enable-features=SharedArrayBuffer",
-        "--use-fake-ui-for-media-stream"
-    ]
-
 @pytest.fixture(scope="module")
 def browser():
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False, args=get_browser_args())
+        browser = p.chromium.launch(headless=False)
         yield browser
         browser.close()
 
 @pytest.fixture(scope="module")
 def page(browser):
-    page = browser.new_page()
+    context = browser.new_context(
+        permissions=["clipboard-read", "clipboard-write"]
+    )
+    page = context.new_page()
     yield page
     page.close()
 
@@ -50,10 +46,16 @@ def page(browser):
 )
 def test_password_generation(page, use_numbers, use_punctuation, expected_chars):
     page.goto(BASE_URL)
+    
     # Set password options
-    if not use_numbers:
+    if use_numbers:
+        page.check("input[name='include_punctuation']")
+    else:
         page.uncheck("input[name='include_punctuation']")
-    if not use_punctuation:
+
+    if use_punctuation:
+        page.check("input[name='include_punctuation']")
+    else:
         page.uncheck("input[name='include_punctuation']")
 
     # Submit form
