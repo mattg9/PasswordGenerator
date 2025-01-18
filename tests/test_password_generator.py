@@ -1,19 +1,12 @@
 import pytest
 from playwright.sync_api import sync_playwright
 from subprocess import Popen
-import time
 
 # Start the Flask app before running tests
 @pytest.fixture(scope="module", autouse=True)
 def start_flask_app():
     flask_process = Popen(["flask", "run"])
-    time.sleep(2)  # Wait for the server to start
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False, args=browser_args)
-        page = browser.new_page()
-        page.goto(BASE_URL)
-        yield page
-    browser.close()
+    yield
     flask_process.terminate()  # Terminate Flask process after tests
 
 # Base URL of the app
@@ -26,6 +19,13 @@ def extract_password(page):
 def browser_args():
     return ["--disable-features=IsolateOrigins,site-per-process"]
 
+@pytest.fixture(scope="session")
+def browser():
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=False, args=browser_args())
+        yield browser
+        browser.close()
+
 # Playwright tests
 @pytest.mark.parametrize(
     "use_numbers, use_punctuation, expected_chars",
@@ -36,7 +36,9 @@ def browser_args():
         (True, True, "all characters"),  # All characters
     ],
 )
-def test_password_generation(page, use_numbers, use_punctuation, expected_chars):
+def test_password_generation(browser, use_numbers, use_punctuation, expected_chars):
+    page = browser.new_page()
+    page.goto(BASE_URL)
     # Set password options
     if not use_numbers:
         page.uncheck("input[name='include_punctuation']")
@@ -60,7 +62,9 @@ def test_password_generation(page, use_numbers, use_punctuation, expected_chars)
     elif expected_chars == "all characters":
         assert any(not c.isalnum() for c in password), "Password lacks punctuation"
 
-def test_copy_to_clipboard(page):
+def test_copy_to_clipboard(browser):
+    page = browser.new_page()
+    page.goto(BASE_URL)
     # Submit form to generate a password
     page.click("button[type='submit']")
     password = extract_password(page)
